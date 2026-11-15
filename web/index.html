@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>ניתוח הוצאות אשראי</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="page-header">
+    <h1>ניתוח הוצאות אשראי</h1>
+    <p class="privacy">הקבצים נקראים בדפדפן בלבד ואינם נשלחים לשום מקום. עסקאות לא נשמרות; בדפדפן נשמרים רק שינויי הקטגוריות שלך.</p>
+  </header>
+
+  <main>
+    <section class="panel" aria-labelledby="upload-title">
+      <h2 id="upload-title">העלאת דפי חיוב</h2>
+      <label id="dropzone" class="dropzone" for="fileInput">
+        <span class="dropzone-title">גרור לכאן קבצים או לחץ לבחירה</span>
+        <span class="dropzone-sub">קובץ אחד לכל כרטיס אשראי. נתמכים: Excel (xlsx) ו-CSV</span>
+      </label>
+      <input id="fileInput" class="visually-hidden" type="file" multiple accept=".xlsx,.csv,.txt">
+      <div class="button-row">
+        <button type="button" id="demoButton" class="button">טען נתוני דמו</button>
+        <button type="button" id="clearButton" class="button button-quiet" hidden>נקה הכול</button>
+      </div>
+      <p id="notice" class="notice" role="status" aria-live="polite"></p>
+      <ul id="fileList" class="file-list"></ul>
+    </section>
+
+    <div id="dashboard" hidden>
+      <section class="panel filters" aria-label="סינון">
+        <div class="field">
+          <label for="fromMonth">מחודש</label>
+          <select id="fromMonth"></select>
+        </div>
+        <div class="field">
+          <label for="toMonth">עד חודש</label>
+          <select id="toMonth"></select>
+        </div>
+        <fieldset class="field card-filter">
+          <legend>כרטיסים</legend>
+          <div id="cardFilter" class="checks"></div>
+        </fieldset>
+      </section>
+      <p id="foreignNote" class="notice" hidden></p>
+
+      <section class="kpis" aria-label="סיכום">
+        <div class="kpi"><span class="kpi-label">סך הוצאות</span><span id="kpiSpent" class="kpi-value"></span><span id="kpiCredits" class="kpi-sub"></span></div>
+        <div class="kpi"><span class="kpi-label">ממוצע חודשי</span><span id="kpiAverage" class="kpi-value"></span></div>
+        <div class="kpi"><span class="kpi-label">מספר עסקאות</span><span id="kpiCount" class="kpi-value"></span></div>
+        <div class="kpi"><span class="kpi-label">ההוצאה הגדולה ביותר</span><span id="kpiBiggest" class="kpi-value"></span><span id="kpiBiggestName" class="kpi-sub"></span></div>
+      </section>
+
+      <section class="panel">
+        <h2>מגמה חודשית</h2>
+        <div class="chart-box" id="trendBox"><canvas id="trendChart" role="img" aria-label="הוצאות לפי חודש וכרטיס"></canvas></div>
+        <details class="table-view"><summary>הצג כטבלה</summary><div id="trendTable"></div></details>
+      </section>
+
+      <div class="two-col">
+        <section class="panel">
+          <h2>הוצאות לפי קטגוריה</h2>
+          <div class="chart-box" id="categoryBox"><canvas id="categoryChart" role="img" aria-label="הוצאות לפי קטגוריה"></canvas></div>
+          <details class="table-view"><summary>הצג כטבלה</summary><div id="categoryTable"></div></details>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>בתי העסק המובילים</h2>
+            <div class="segmented" role="group" aria-label="מיון לפי">
+              <button type="button" id="metricAmount" class="seg" aria-pressed="true">לפי סכום</button>
+              <button type="button" id="metricCount" class="seg" aria-pressed="false">לפי מספר עסקאות</button>
+            </div>
+          </div>
+          <div class="chart-box" id="merchantBox"><canvas id="merchantChart" role="img" aria-label="בתי העסק המובילים"></canvas></div>
+          <details class="table-view"><summary>הצג כטבלה</summary><div id="merchantTable"></div></details>
+        </section>
+      </div>
+
+      <div class="two-col">
+        <section class="panel">
+          <h2>הוצאות חריגות</h2>
+          <p class="hint">הוצאה שגדולה פי 3 לפחות מהחציון בקטגוריה שלה (בקטגוריות עם 4 הוצאות לפחות).</p>
+          <div id="unusualTable"></div>
+        </section>
+        <section class="panel">
+          <h2>תשלומים חוזרים</h2>
+          <p class="hint">אותו בית עסק, חיוב אחד בחודש בסכום דומה, לפחות 3 חודשים.</p>
+          <div id="recurringTable"></div>
+        </section>
+      </div>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>כל העסקאות</h2>
+          <div class="button-row">
+            <label class="visually-hidden" for="searchBox">חיפוש</label>
+            <input id="searchBox" class="search" type="search" placeholder="חיפוש בית עסק או קטגוריה">
+          </div>
+        </div>
+        <p class="hint">שינוי קטגוריה של בית עסק חל על כל העסקאות שלו, ונשמר בדפדפן הזה.</p>
+        <div id="txTable"></div>
+        <div class="button-row">
+          <button type="button" id="exportRules" class="button button-quiet">ייצוא שינויי קטגוריות</button>
+          <label class="button button-quiet" for="importRules">ייבוא שינויי קטגוריות</label>
+          <input id="importRules" class="visually-hidden" type="file" accept=".json">
+          <button type="button" id="resetRules" class="button button-quiet">איפוס שינויים</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="page-footer">
+    הכלי נבדק על נתוני דמו סינתטיים בלבד ולא על דפי חיוב אמיתיים. אם הפריסה של הקובץ שונה, תוצג בחירת עמודות ידנית.
+  </footer>
+
+  <dialog id="mapDialog" class="dialog" aria-labelledby="mapTitle">
+    <form id="mapForm" method="dialog">
+      <h2 id="mapTitle">בחירת עמודות</h2>
+      <p id="mapFile" class="hint"></p>
+      <div id="mapFields" class="map-fields"></div>
+      <div class="button-row">
+        <button type="submit" value="ok" class="button">אישור</button>
+        <button type="button" id="mapCancel" class="button button-quiet">דלג על הקובץ</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="vendor/chart.umd.min.js"></script>
+  <script src="vendor/read-excel-file.min.js"></script>
+  <script src="js/categories.js"></script>
+  <script src="js/parse.js"></script>
+  <script src="js/analyze.js"></script>
+  <script src="js/demo-data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
