@@ -2,6 +2,8 @@
 
 Upload credit-card statements from several cards and get an interactive spending dashboard, entirely in the browser. The repo also contains a small command-line version of the same idea for bank-style CSV files.
 
+**[Live demo](https://matnael332.github.io/expense-insights/)** (runs in your browser, nothing is uploaded)
+
 ![Dashboard with the demo data](docs/dashboard.png)
 
 ## Dashboard (`web/`)
